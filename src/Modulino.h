@@ -506,3 +506,77 @@ private:
   float internal = NAN;
   _distance_api* api = nullptr;
 };
+
+
+
+class ModulinoMotors : public Module {
+public:
+  const int MAX_SPEED = 4095;
+  ModulinoMotors(uint8_t address = 0xFF)
+    : Module(address, "MOTORS") {
+    memset((uint8_t*)data, 0x00, 9);
+    senseA = 0;
+    senseB = 0;
+  }
+
+  void setSpeed(const int speedA, const int speedB) {
+    data[0] = 'M';
+    memcpy(data+1, &speedA, sizeof(speedA));
+    memcpy(data+5, &speedB, sizeof(speedB));
+    write((uint8_t*)data, 9);
+  }
+
+  void setDecay(const uint8_t decay_mode){
+    data[0] = 'T';
+    data[1] = decay_mode;
+    write((uint8_t*)data, 2);
+  }
+
+  void setFrequency(const uint32_t frequency){
+    data[0] = 'F';
+    memcpy(data+1, &frequency, sizeof(frequency));
+    write((uint8_t*)data, sizeof(frequency)+1);
+  }
+
+  uint16_t getSenseA(){
+    updateSense();
+    return senseA;
+  }
+
+  uint16_t getSenseB(){
+    updateSense();
+    return senseB;
+  }
+
+  void getSense(uint16_t & senseA, uint16_t & senseB){
+    updateSense();
+    senseA = this->senseA;
+    senseB = this->senseB;
+  }
+
+  virtual uint8_t discover() {
+    for (unsigned int i = 0; i < sizeof(match)/sizeof(match[0]); i++) {
+      if (scan(match[i])) {
+        return match[i];
+      }
+    }
+    return 0xFF;
+  }
+
+private:
+  uint8_t data[9];  
+  uint16_t senseA, senseB;
+
+  int updateSense(){
+    uint8_t buf[5];
+    auto res = read(buf, 4);
+    if (res == false) {
+      return 0;
+    }
+    memcpy(&senseA, buf, 2);
+    memcpy(&senseB, buf+2, 2);
+    return 1;
+  }
+protected:
+  uint8_t match[1] = { 0x48 };
+};

@@ -4,6 +4,7 @@
 #include "Modulino.h"
 #include "Wire.h"
 #include "fw.h"
+//#include "fw_motor.h" uncomment to flash node motors
 
 // https://www.st.com/resource/en/application_note/an4221-i2c-protocol-used-in-the-stm32-bootloader-stmicroelectronics.pdf
 
@@ -18,8 +19,12 @@ void setup() {
   if (sendReset() != 0) {
     Serial.println("Send reset failed");
   }
+  #ifndef NODE_MOTOR
+    auto result = flash(node_base_bin, node_base_bin_len);
+  #else
+    auto result = flash(node_motor_01, node_motor_01_len);
+  #endif
 
-  auto result = flash(node_base_bin, node_base_bin_len);
   if (result) {
     matrixInitAndDraw("PASS");
   } else {
